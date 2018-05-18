@@ -1,0 +1,164 @@
+<%-include  public %>
+	<style>
+		.hidden{
+			display:none!important;
+		}
+		.err{
+			color:red;
+		}
+	</style>
+    	<div class="content">
+
+  			<div class="form-group">
+	            <label for="name" class="control-label">用户名:</label>
+	            <input type="text" class="form-control" id="name" name="name" required autocomplete="off" placeholder="Username">
+	            <div class="name-err err hidden">用户名已存在</div>
+       		</div>
+       		<div class="form-group">
+	            <label for="password" class="control-label">密码:</label>
+	            <input type="password" class="form-control" id="password"  name="password" required autocomplete="off" placeholder="Password">
+	            <div class="password-err err hidden">密码过于简单</div>
+        	</div>
+        	<div class="form-group">
+	            <label for="password" class="control-label">确认密码:</label>
+	            <input type="password" class="form-control" id="re-password" required autocomplete="off" placeholder="Password">
+	            <div class="re-password-err err hidden">两次密码不一致</div>
+        	</div>
+        	<div class="form-group">
+	            <label  class="control-label">邮箱:</label>
+	            <input type="text" class="form-control" id="email"  name="email" required autocomplete="off" placeholder="Email">
+	            <div class="email-err err hidden">邮箱格式不正确</div>
+        	</div>
+      
+	            <label class="">验证码:</label>
+	            <input type="text" class="" id="check"  autocomplete="off" placeholder="验证码">
+	            <button class="test">获取验证码</button>
+	            <div class="check-err1 err hidden">验证码错误</div>
+	            <div class="check-err2 err hidden">验证码失效</div>
+        
+	        <div class="form-group ">
+	            <button class="btn btn-success login">注册</button>
+	        </div>
+
+  		</div>
+<script>
+	$(".form-control").on("blur",function(){
+		if(!$(this).hasClass("hidden")){
+			$(".err").addClass("hidden");
+		}      
+    });
+    $("#name").on("blur",function(){
+    	$.ajax({
+    		url:"/signup",
+    		type:"post",
+    		data:{
+    			name:$("#name").val()
+    		},
+    		success:function(data){
+    			if(data['name'] == "no"){
+    				$(".name-err").removeClass("hidden");
+    			}
+    		}
+    	})
+    });
+
+    $("#password").on("blur",function(){
+    	var reg = /[0-9]+/g;
+		var str = $("#password").val();
+		if(reg.test(str)){
+			$(".password-err").removeClass("hidden");
+		}
+    });
+
+    $("#re-password").on("blur",function(){
+    	var repassword = $("#re-password").val();
+    	var password = $("#password").val();
+    	if(repassword !== password){
+    		$(".re-password-err").removeClass("hidden")
+    	}
+    });
+
+   	$("#email").on("blur",function(){
+   		var reg = /^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/g;
+   		var str = $("#email").val();
+   		if(!reg.test(str)){
+   			$(".email-err").removeClass("hidden");
+   		}
+   	})
+
+	var  checkmes,timer;
+	$(".test").on("click",function(){	
+		if(!$("#email").val()){
+			return
+		} else {
+			var cl = 60;
+			timer = setInterval(function(){
+				cl--;
+				if(cl <= -1){
+					$(".test").text('获取验证码').removeAttr('disabled');
+					clearInterval(timer);
+					checkmes = null;
+				} else{
+					$(".test").text('重新发送('+cl+'秒)').attr('disabled',true);
+				}
+			},1000);
+
+			var random = [];
+			for(var i = 0; i < 4; i ++){
+				random.push(parseInt(Math.random() * 10));
+			}
+			var res = random.join('');
+			$.ajax({
+				url: '/randommes',
+				type: "post",
+				data: {
+					mes: res,
+					email:$("#email").val()
+				},
+				success:function(data){
+					if(data.listen == "success"){
+						checkmes = data.mes;
+						console.log(data.mes);
+					}
+				}
+			});
+		}	
+	});
+
+	$("#check").on("focus",function(){
+		$(".check-err1").addClass("hidden");
+		$(".check-err2").addClass("hidden");
+	});
+
+	$("#check").on("blur",function(){
+		if($("#check").val()){
+			if(!checkmes){
+				$(".check-err2").removeClass("hidden");
+			} else {
+				if(checkmes !== $("#check").val()){
+					$(".check-err1").removeClass("hidden");
+				}
+			}
+		}
+	})
+
+	$(".login").on("click",function(){
+		$.ajax({
+			url: "/signup",
+			type: "post",
+			data: {
+				name: $("#name").val(),
+				password: $("#password").val(),
+				email: $("#email").val()
+			},
+			success: function(data){
+				if(data == "success"){
+					window.location.href = "signin";
+				}
+			}
+		})
+	})
+</script>
+
+<%- include bottom %>
+
